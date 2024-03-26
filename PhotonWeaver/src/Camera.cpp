@@ -36,6 +36,7 @@ void Camera::setSpeed(float newSpeed)
 
 void Camera::Inputs(GLFWwindow* window, double deltaTime)
 {
+    float scalingFactor = 100.0f;
     // Determine the base speed
     float baseSpeed = speed * deltaTime;
 
@@ -93,15 +94,24 @@ void Camera::Inputs(GLFWwindow* window, double deltaTime)
             firstClick = false;
         }
 
-        double mouseX;
-        double mouseY;
+        // Fetch the coordinates of the cursor
+        double mouseX, mouseY;
         glfwGetCursorPos(window, &mouseX, &mouseY);
 
-        float rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
-        float rotY = -sensitivity * (float)(mouseX - (width / 2)) / width;
+        // Calculate change in mouse position
+        double deltaX = mouseX - (width / 2);
+        double deltaY = mouseY - (height / 2);
 
+        // Scale mouse movement by sensitivity and delta time
+        deltaX *= sensitivity * scalingFactor * deltaTime;
+        deltaY *= sensitivity * scalingFactor * deltaTime;
+
+        // Update camera orientation
+        float rotX = static_cast<float>(deltaY) / height;
+        float rotY = static_cast<float>(-deltaX) / width;
+
+        // Update the camera orientation based on mouse movement
         glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotX), glm::normalize(glm::cross(Orientation, Up)));
-
         if (!(glm::angle(newOrientation, Up) <= glm::radians(5.0f)) or (glm::angle(newOrientation, -Up) <= glm::radians(5.0f)))
         {
             Orientation = newOrientation;
@@ -109,8 +119,10 @@ void Camera::Inputs(GLFWwindow* window, double deltaTime)
 
         Orientation = glm::rotate(Orientation, glm::radians(-rotY), Up);
 
+        // Set the cursor position to the center of the window
         glfwSetCursorPos(window, (width / 2), (height / 2));
     }
+
     else
     {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);

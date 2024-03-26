@@ -1,59 +1,79 @@
 #version 330 core
-out vec4 FragColor;
+out vec4 FragColor; // Output color
 
-in vec2 TexCoords;
+// Define a ray struct
+struct Ray {
+    vec3 origin; // Ray origin
+    vec3 direction; // Ray direction
+};
 
-uniform vec3 camPos; // Camera position
-uniform vec3 camDir; // Camera direction
-uniform vec3 camUp; // Camera up vector
-uniform float fov; // Field of view
-uniform float aspectRatio; // Aspect ratio of the viewport
-
-// Simple sphere definition
+// Define a sphere struct
 struct Sphere {
-    vec3 center;
-    float radius;
+    vec3 center; // Sphere center
+    float radius; // Sphere radius
 };
 
-// Simple material definition
-struct Material {
-    vec4 color;
-};
+// Function to test for intersection with a sphere
+bool intersectSphere(vec3 rayOrigin, vec3 rayDirection, Sphere sphere, out vec3 hitPosition, out vec3 hitNormal) {
+    vec3 oc = rayOrigin - sphere.center;
+    float a = dot(rayDirection, rayDirection);
+    float b = 2.0 * dot(oc, rayDirection);
+    float c = dot(oc, oc) - sphere.radius * sphere.radius;
+    float discriminant = b * b - 4.0 * a * c;
 
-// Function to calculate ray direction
-vec3 getRayDirection(vec2 uv, vec3 camPos, vec3 camDir, vec3 camUp, float fov, float aspectRatio) {
-    vec3 right = cross(camDir, camUp);
-    vec3 up = cross(right, camDir);
-    uv = uv * 2.0 - 1.0; // Transform from [0,1] to [-1,1]
-    vec3 dir = normalize(camDir + uv.x * right * aspectRatio + uv.y * up);
-    return dir;
+    if (discriminant > 0.0) {
+        float temp = (-b - sqrt(discriminant)) / (2.0 * a);
+        if (temp > 0.001) {
+            hitPosition = rayOrigin + rayDirection * temp;
+            hitNormal = normalize(hitPosition - sphere.center);
+            return true;
+        }
+    }
+    return false;
 }
 
-// Ray-sphere intersection
-bool intersectSphere(vec3 rayOrigin, vec3 rayDir, Sphere sphere, out float t) {
-    vec3 toSphere = rayOrigin - sphere.center;
-    float a = dot(rayDir, rayDir);
-    float b = 2.0 * dot(toSphere, rayDir);
-    float c = dot(toSphere, toSphere) - sphere.radius * sphere.radius;
-    float discriminant = b*b - 4*a*c;
-    if (discriminant < 0) {
-        return false; // No intersection
+// Function to shade the scene
+vec3 shadeScene(Ray ray) {
+    Sphere sphere;
+    sphere.center = vec3(0.0, 0.0, -1.0);
+    sphere.radius = 0.5;
+
+    vec3 hitPosition;
+    vec3 hitNormal;
+    if (intersectSphere(ray.origin, ray.direction, sphere, hitPosition, hitNormal)) {
+        vec3 unitDirection = normalize(ray.direction);
+        float t = 0.5 * (unitDirection.y + 1.0);
+        return (1.0 - t) * vec3(1.0) + t * vec3(0.5, 0.7, 1.0);
     }
-    t = (-b - sqrt(discriminant)) / (2.0 * a);
-    return t >= 0; // Intersection at t
+
+    // Background color
+    return vec3(0.5, 0.7, 1.0);
 }
 
 void main() {
-    Sphere sphere = Sphere(vec3(0.0, 0.0, -5.0), 1.0); // Define a sphere
-    Material material = Material(vec4(1.0, 0.0, 0.0, 1.0)); // Red color
+    // Image
+    float aspectRatio = 16.0 / 9.0;
+    int imageWidth = 400;
+    int imageHeight = int(float(imageWidth) / aspectRatio);
 
-    // Calculate ray direction
-    vec3 rayDir = getRayDirection(TexCoords, camPos, camDir, camUp, fov, aspectRatio);
+    // Camera
+    vec3 cameraCenter = vec3(0.0);
+    vec3 viewportU = vec3(2.0 * aspectRatio, 0.0, 0.0);
+    vec3 viewportV = vec3(0.0, -2.0, 0.0);
+    vec3 viewportUpperLeft = cameraCenter - vec3(0.0, 0.0, 1.0) - 0.5 * (viewportU + viewportV);
 
-    float t; // Intersection distance
-    if (intersectSphere(camPos, rayDir, sphere, t)) {
-        FragColor = material.color; // Hit the sphere
-    } else {
-        FragColor = vec4(0.0, 0.0, 0.0, 1.0); // Missed, background color
+    // Render
+    for (int j = 0; j < imageHeight; ++j) {
+        for (int i = 0; i < imageWidth; ++i) {
+            vec3 pixelCenter = viewportUpperLeft + float(i) / float(imageWidth) * viewportU
+                             + float(j) / float(imageHeight) * viewportV;
+            vec3 rayDirection = pixelCenter - cameraCenter;
+            Ray ray;
+            ray.origin = cameraCenter;
+            ray.direction = rayDirection;
+
+            vec3 pixelColor = shadeScene(ray);
+            FragColor = vec4(pixelColor, 1.0);
+        }
     }
 }
