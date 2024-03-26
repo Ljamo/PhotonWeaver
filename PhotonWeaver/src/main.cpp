@@ -78,7 +78,7 @@ int main() {
 	glViewport(0, 0, 800, 600);
 
 	// Shader instantiation
-	Shader shader("E:\\.Dev\\PhotonWeaver\\PhotonWeaver\\src\\shaders\\test.vert", "E:\\.Dev\\PhotonWeaver\\PhotonWeaver\\src\\shaders\\test.frag");
+	Shader shader("E:\\.Dev\\PhotonWeaver\\PhotonWeaver\\src\\shaders\\default.vert", "E:\\.Dev\\PhotonWeaver\\PhotonWeaver\\src\\shaders\\default.frag");
 	globalShader = &shader;
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
