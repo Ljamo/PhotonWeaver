@@ -18,9 +18,7 @@ struct point3
 };
 
 struct Color {
-    float r; // Red component
-    float g; // Green component
-    float b; // Blue component
+    vec3 rgb; // Combined RGB components
 };
 
 struct ray
@@ -82,32 +80,41 @@ float posY = gl_FragCoord.y;
 // Plug in P(t) = A + tb: (P(t) - C) (P(t) - C) = r^2
 // Rewritten: ((A + tb) - C) ((A + tb) - C) = r^2
 
-bool HitSphere(point3 center, float radius, ray r)
+float HitSphere(point3 center, float radius, ray r) 
 {
     vec3 oc = vec3(r.orig.x - center.x, r.orig.y - center.y, r.orig.z - center.z);
     float a = dot(r.dir, r.dir);
-    float b = 2.0 * dot(oc, r.dir);
+    float half_b = dot(oc, r.dir);
     float c = dot(oc, oc) - radius * radius;
-    float discriminant = b * b - 4.0 * a * c;
-    return (discriminant >= 0.0);
+    float discriminant = half_b * half_b - a * c;
+
+    if (discriminant < 0.0) {
+        return -1.0;
+    } else {
+        return (-half_b - sqrt(discriminant)) / a;
+    }
 }
+
 
 Color ray_color(ray r) {
-    if (HitSphere(point3(0,0,-1), 0.5, r))
-        return Color(1.0, 0.0, 0.0);
-
-    vec3 unit_direction = normalize(r.dir);
-    float t = 0.5 * (unit_direction.y + 1.0);
-    return Color((1.0 - t) * bottom_color.r + t * top_color.r,  // Red component
-                 (1.0 - t) * bottom_color.g + t * top_color.g,  // Green component
-                 (1.0 - t) * bottom_color.b + t * top_color.b); // Blue component
+    float t = HitSphere(point3(0, 0, -1), 0.5, r);
+    if (t > 0.0) {
+        vec3 intersectionPoint = vec3(r.orig.x + t * r.dir.x, r.orig.y + t * r.dir.y, r.orig.z + t * r.dir.z);
+        vec3 N = normalize(intersectionPoint - vec3(0.0, 0.0, -1.0));
+        N.y *= -1.0;
+        return Color(vec3(0.5 * (N.x + 1.0), 0.5 * (N.y + 1.0), 0.5 * (N.z + 1.0)));
+    } else {
+        vec3 unit_direction = normalize(r.dir);
+        float a = 0.5 * (unit_direction.y + 1.0);
+        return Color((1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0));
+    }
 }
+
 
 //-------------------------------------------
 
 void main()
 {
-    // Calculate Ray Direction from cam to pixel loc
     // Calculate Ray Direction from cam to pixel loc
     float normalizedScreenX = (gl_FragCoord.x / width) * 2.0 - 1.0;
     float normalizedScreenY = 1.0 - (gl_FragCoord.y / height) * 2.0;
@@ -121,8 +128,6 @@ void main()
     mat3 camToWorld = mat3(right, up, -camDir); // Create rotation matrix to align camera direction with negative z-axis
     rayDirection = camToWorld * rayDirection;
 
-
-
     point3 rayOrigin = camCenter;
     ray primaryRay;
 
@@ -130,8 +135,9 @@ void main()
     primaryRay.dir = rayDirection;
 
     // Check if the ray intersects with the sphere
-    if (HitSphere(point3(0,0,-1), 0.5, primaryRay)) {
-        FragOutput = vec4(ray_color(primaryRay).r, ray_color(primaryRay).g, ray_color(primaryRay).b, 1.0);
+    if (HitSphere(point3(0,0,-1), 0.5, primaryRay) >= 0) {
+        Color col = ray_color(primaryRay);
+        FragOutput = vec4(col.rgb, 1.0);
     } else {
         // Background gradient
         float t = 0.5 * (primaryRay.dir.y + 1.0);
