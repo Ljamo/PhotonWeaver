@@ -7,6 +7,8 @@ uniform vec3 camUp;
 uniform float fov; // Field of view in degrees
 uniform float aspectRatio;
 
+uniform vec3 ambientColor; // Define ambient color
+
 const int maxBounces = 5; // Define the maximum number of bounces
 
 
@@ -134,19 +136,23 @@ vec3 rayColorSingleSample(Ray r, HittableList list, vec3 bgStartColor, vec3 bgEn
     HitRecord rec;
     if (hit(list, r, rec)) {
         vec3 normal = normalize(rec.normal);
-        vec3 reflectDir = reflect(r.direction, normal);
-        Ray reflectedRay;
-        reflectedRay.origin = rec.hitPoint + 0.001 * normal;
-        reflectedRay.direction = reflectDir;
 
-        // Simulate light bounces by casting a shadow ray in the reflected direction
-        vec3 reflectedColor = rayColorSingleSample(reflectedRay, list, bgStartColor, bgEndColor);
+        // Simulate light bounces by casting a shadow ray towards random directions
+        vec3 shadowDir = random_unit_vector();
+        Ray shadowRay;
+        shadowRay.origin = rec.hitPoint;
+        shadowRay.direction = shadowDir;
 
-        // Compute diffuse lighting
-        float diffuse = max(dot(normal, vec3(0.0, 1.0, 0.0)), 0.0);
+        // Check for shadow intersection
+        HitRecord shadowRec;
+        bool shadowHit = hit(list, shadowRay, shadowRec);
 
-        // Compute final color as a combination of diffuse lighting and reflected color
-        accumulatedColor = (diffuse * vec3(0.8) + reflectedColor) * rec.materialColor;
+        // If in shadow, return ambient color only, otherwise return the material color
+        if (shadowHit && shadowRec.t < length(shadowDir)) {
+            accumulatedColor = ambientColor; // Ambient color or background color
+        } else {
+            accumulatedColor = rec.materialColor;
+        }
     } else {
         // If the ray misses any objects, return the background gradient color
         vec3 unitDirection = normalize(r.direction);
@@ -157,7 +163,6 @@ vec3 rayColorSingleSample(Ray r, HittableList list, vec3 bgStartColor, vec3 bgEn
     return accumulatedColor;
 }
 
-
 vec3 rayColor(Ray r, HittableList list, vec3 bgStartColor, vec3 bgEndColor) {
     vec3 accumulatedColor = vec3(0.0);
 
@@ -167,9 +172,16 @@ vec3 rayColor(Ray r, HittableList list, vec3 bgStartColor, vec3 bgEndColor) {
         if (hit(list, r, rec)) {
             vec3 normal = normalize(rec.normal);
             vec3 reflectDir = reflect(r.direction, normal);
+
+            // Perturb the reflection direction within a cone to introduce roughness
+            float roughness = 0.1; // Adjust the roughness factor as needed
+            reflectDir = normalize(reflectDir + roughness * random_on_hemisphere(normal));
+
             r.origin = rec.hitPoint + 0.001 * normal;
             r.direction = reflectDir;
-            accumulatedColor += rec.materialColor; // Accumulate material color
+
+            // Accumulate material color with some attenuation factor
+            accumulatedColor += rec.materialColor * 0.5; // Adjust the attenuation factor as needed
         } else {
             // If no intersection, return background color
             vec3 unitDirection = normalize(r.direction);
@@ -182,9 +194,11 @@ vec3 rayColor(Ray r, HittableList list, vec3 bgStartColor, vec3 bgEndColor) {
     return accumulatedColor;
 }
 
+
+
 void main() {
-    Sphere sphere1 = Sphere(vec3(0.0, 0.0, -1.0), 0.5, vec3(0.3)); // Gray sphere
-    Sphere sphere2 = Sphere(vec3(0.0, -100.5, -1.0), 100.0, vec3(0.3)); // Gray sphere
+    Sphere sphere1 = Sphere(vec3(0.0, 0.0, -1.0), 0.5, vec3(0.1)); // Gray sphere
+    Sphere sphere2 = Sphere(vec3(0.0, -100.5, -1.0), 100.0, vec3(0.1)); // Gray sphere
     HittableList list;
     list.hittables[0] = Hittable(sphere1);
     list.hittables[1] = Hittable(sphere2);

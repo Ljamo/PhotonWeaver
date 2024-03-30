@@ -51,7 +51,7 @@ void Camera::Inputs(GLFWwindow* window, double deltaTime)
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
     {
-        Position -= adjustedSpeed * -glm::normalize(glm::cross(Orientation, Up));
+        Position += adjustedSpeed * -glm::normalize(glm::cross(Orientation, Up));
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
     {
@@ -59,15 +59,15 @@ void Camera::Inputs(GLFWwindow* window, double deltaTime)
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
     {
-        Position -= adjustedSpeed * glm::normalize(glm::cross(Orientation, Up));
+        Position += adjustedSpeed * glm::normalize(glm::cross(Orientation, Up));
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
     {
-        Position += adjustedSpeed * Up;
+        Position -= adjustedSpeed * Up;
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
     {
-        Position += adjustedSpeed * -Up;
+        Position -= adjustedSpeed * -Up;
     }
 
     bool shiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
@@ -99,8 +99,8 @@ void Camera::Inputs(GLFWwindow* window, double deltaTime)
         glfwGetCursorPos(window, &mouseX, &mouseY);
 
         // Calculate change in mouse position
-        double deltaX = mouseX - (width / 2);
-        double deltaY = mouseY - (height / 2);
+        double deltaX = (width / 2) - mouseX;
+        double deltaY = (height / 2) - mouseY;
 
         // Scale mouse movement by sensitivity and delta time
         deltaX *= sensitivity * scalingFactor * deltaTime;
@@ -111,13 +111,18 @@ void Camera::Inputs(GLFWwindow* window, double deltaTime)
         float rotY = static_cast<float>(-deltaX) / width;
 
         // Update the camera orientation based on mouse movement
+        // Update the camera orientation based on mouse movement
         glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotX), glm::normalize(glm::cross(Orientation, Up)));
-        if (!(glm::angle(newOrientation, Up) <= glm::radians(5.0f)) or (glm::angle(newOrientation, -Up) <= glm::radians(5.0f)))
+
+        // Check if the new orientation is within acceptable bounds (not looking directly up or down)
+        if (!(glm::angle(newOrientation, Up) <= glm::radians(5.0f)) && !(glm::angle(newOrientation, -Up) <= glm::radians(5.0f)))
         {
             Orientation = newOrientation;
         }
 
-        Orientation = glm::rotate(Orientation, glm::radians(-rotY), Up);
+        // Rotate around the global Up axis (Y-axis) instead of the local Up axis
+        Orientation = glm::rotate(Orientation, glm::radians(-rotY), glm::vec3(0.0f, 1.0f, 0.0f));
+
 
         // Set the cursor position to the center of the window
         glfwSetCursorPos(window, (width / 2), (height / 2));

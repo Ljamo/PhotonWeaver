@@ -158,29 +158,57 @@ vec3 rayColorSingleSample(Ray r, HittableList list, vec3 bgStartColor, vec3 bgEn
 }
 
 
-vec3 rayColor(Ray r, HittableList list, vec3 bgStartColor, vec3 bgEndColor) {
+vec3 rayColorSingleSample(Ray r, HittableList list, vec3 bgStartColor, vec3 bgEndColor) {
     vec3 accumulatedColor = vec3(0.0);
 
-    // Perform a fixed number of bounces
-    for (int bounce = 0; bounce < maxBounces; ++bounce) {
-        HitRecord rec;
-        if (hit(list, r, rec)) {
-            vec3 normal = normalize(rec.normal);
-            vec3 reflectDir = reflect(r.direction, normal);
-            r.origin = rec.hitPoint + 0.001 * normal;
-            r.direction = reflectDir;
-            accumulatedColor += rec.materialColor; // Accumulate material color
-        } else {
-            // If no intersection, return background color
-            vec3 unitDirection = normalize(r.direction);
-            float t = 0.5 * (unitDirection.y + 1.0);
-            accumulatedColor += mix(bgStartColor, bgEndColor, t);
-            break; // Exit loop if no intersection
+    // Perform a single bounce
+    HitRecord rec;
+    if (hit(list, r, rec)) {
+        vec3 normal = normalize(rec.normal);
+        vec3 reflectDir = reflect(r.direction, normal);
+        Ray reflectedRay;
+        reflectedRay.origin = rec.hitPoint + 0.001 * normal;
+        reflectedRay.direction = reflectDir;
+
+        // Simulate light bounces by casting a shadow ray in random directions
+        vec3 indirectLight = vec3(0.0);
+        for (int i = 0; i < num_samples; ++i) {
+            // Introduce roughness by perturbing the normal
+            vec3 perturbedNormal = normalize(normal + random_on_hemisphere(normal) * roughness);
+            // Calculate shadow direction
+            vec3 shadowDir = perturbedNormal;
+            Ray shadowRay;
+            shadowRay.origin = rec.hitPoint;
+            shadowRay.direction = shadowDir;
+
+            // Check for shadow intersection
+            HitRecord shadowRec;
+            bool shadowHit = hit(list, shadowRay, shadowRec);
+
+            // Calculate light attenuation based on energy loss
+            float attenuation = exp(-length(rec.hitPoint - shadowRec.hitPoint) * energy_loss);
+
+            // If not in shadow, accumulate indirect lighting
+            if (!shadowHit || shadowRec.t > length(shadowDir)) {
+                float cosTheta = max(dot(shadowDir, normal), 0.0);
+                indirectLight += cosTheta * vec3(1.0) * attenuation; // Assuming white light
+            }
         }
+        indirectLight /= float(num_samples);
+
+        // Compute final color as a combination of diffuse lighting and reflected color
+        accumulatedColor = indirectLight * rec.materialColor;
+    } else {
+        // If the ray misses any objects, return the background gradient color
+        vec3 unitDirection = normalize(r.direction);
+        float t = 0.5 * (unitDirection.y + 1.0);
+        accumulatedColor = mix(bgStartColor, bgEndColor, t);
     }
 
     return accumulatedColor;
 }
+
+
 
 void main() {
     Sphere sphere1 = Sphere(vec3(0.0, 0.0, -1.0), 0.5, vec3(0.3)); // Gray sphere

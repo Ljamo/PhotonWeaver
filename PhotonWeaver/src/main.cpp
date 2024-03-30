@@ -19,6 +19,8 @@ Shader* globalShader = nullptr; // Initialize to nullptr
 auto width = 800;
 auto height = 600;
 
+
+
 //float samples_per_pixel = 1.0f;
 //float pixel_sample_square = 1.0f;
 
@@ -33,14 +35,24 @@ float quadVertices[] = {
 	 1.0f,  1.0f,   1.0f, 1.0f
 };
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-	// Update the viewport and the aspect ratio uniform
-	glViewport(0, 0, width, height);
+void framebuffer_size_callback(GLFWwindow* window, int newWidth, int newHeight) {
+	// Update the viewport
+	glViewport(0, 0, newWidth, newHeight);
+
+	// Update width and height variables
+	width = newWidth;
+	height = newHeight;
+
+	// Update aspect ratio
+	aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+
+	// Update the aspect ratio uniform in the shader if the shader is available
 	if (globalShader != nullptr) {
 		globalShader->use();
-		globalShader->setFloat("aspectRatio", static_cast<float>(width) / static_cast<float>(height));
+		globalShader->setFloat("aspectRatio", aspectRatio);
 	}
 }
+
 
 int main() {
 	// Initialize GLFW
@@ -78,7 +90,10 @@ int main() {
 	glViewport(0, 0, 800, 600);
 
 	// Shader instantiation
-	Shader shader("E:\\.Dev\\PhotonWeaver\\PhotonWeaver\\src\\shaders\\default.vert", "E:\\.Dev\\PhotonWeaver\\PhotonWeaver\\src\\shaders\\default.frag");
+	std::string vertDir = parentDir + "\\PhotonWeaver\\src\\shaders\\tracer.vert";
+	std::string fragDir = parentDir + "\\PhotonWeaver\\src\\shaders\\tracer.frag";
+
+	Shader shader(vertDir.c_str(), fragDir.c_str());
 	globalShader = &shader;
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 2.0f));
@@ -145,6 +160,9 @@ int main() {
 		// Set sphere uniforms
 		shader.setVec3("sphereCenter", sphereCenter);
 		shader.setFloat("sphereRadius", sphereRadius);
+
+		shader.setFloat("width", (float)width);
+		shader.setFloat("height", (float)height);
 
 		// Set material color uniform
 		shader.setVec4("materialColor", materialColor);

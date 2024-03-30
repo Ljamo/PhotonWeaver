@@ -113,6 +113,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor\GLM;$(SolutionDir)vendor\GLFW\include;$(SolutionDir)vendor\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -130,6 +131,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor\GLM;$(SolutionDir)vendor\GLFW\include;$(SolutionDir)vendor\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,6 +157,8 @@
     <None Include="src\shaders\default.vert" />
     <None Include="src\shaders\test.frag" />
     <None Include="src\shaders\test.vert" />
+    <None Include="src\shaders\tracer.frag" />
+    <None Include="src\shaders\tracer.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera.h" />
