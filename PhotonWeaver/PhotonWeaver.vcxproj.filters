@@ -45,6 +45,8 @@
     <None Include="src\shaders\test.vert" />
     <None Include="src\shaders\tracer.frag" />
     <None Include="src\shaders\tracer.vert" />
+    <None Include="src\shaders\Ray.frag" />
+    <None Include="src\shaders\Ray.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Shader.h">

@@ -90,8 +90,8 @@ int main() {
 	glViewport(0, 0, 800, 600);
 
 	// Shader instantiation
-	std::string vertDir = parentDir + "\\PhotonWeaver\\src\\shaders\\tracer.vert";
-	std::string fragDir = parentDir + "\\PhotonWeaver\\src\\shaders\\tracer.frag";
+	std::string vertDir = parentDir + "\\PhotonWeaver\\src\\shaders\\Ray.vert";
+	std::string fragDir = parentDir + "\\PhotonWeaver\\src\\shaders\\Ray.frag";
 
 	Shader shader(vertDir.c_str(), fragDir.c_str());
 	globalShader = &shader;
