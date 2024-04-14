@@ -4,12 +4,33 @@ out vec4 FragColor;
 
 uniform float width;
 uniform float height;
+uniform vec3 camPos;
+uniform vec3 camDir;
+uniform vec3 camUp;
+uniform float fov;
+uniform float aspectRatio;
 
-vec3 rayOrigin = vec3(0.0, 0.0, 2.0);
+vec3 rayOrigin = camPos;
+
+vec3 getRayDirection(vec2 uv, vec3 camPos, vec3 camDir, vec3 camUp, float fov, float aspectRatio) {
+    vec3 w = normalize(camDir);
+    vec3 u = normalize(cross(camUp, w));
+    vec3 v = cross(w, u);
+
+    float tanFov = tan(radians(fov / 2.0));
+    uv = uv * 2.0 - 1.0;
+    uv.x *= aspectRatio * tanFov;
+    uv.y *= tanFov;
+
+    // Flip the u and v vectors to reverse mouse rotation
+    return normalize(-u * uv.x + v * uv.y + w);
+}
+
+//rayDirection = getRayDirection(gl_FragCoord.xy / vec2(width, height), camPos, camDir, camUp, fov, aspectRatio);
 
 void main() {
     vec2 coord = vec2(gl_FragCoord.x / width * 2.0 - 1.0, gl_FragCoord.y / height * 2.0 - 1.0);
-    vec3 rayDirection = vec3(coord.x, coord.y, -1.0);
+    vec3 rayDirection = getRayDirection(gl_FragCoord.xy / vec2(width, height), camPos, camDir, camUp, fov, aspectRatio);
     float radius = 0.5;
     vec3 lightDir = normalize(vec3(-1.0, -1.0, -1.0));
 

@@ -5,6 +5,8 @@
 #include <gtc/type_ptr.hpp>
 #include <gtx/rotate_vector.hpp>
 #include <gtx/vector_angle.hpp>
+#include <gtc/quaternion.hpp>
+#include <gtx/quaternion.hpp>
 
 #include <string>
 #include <fstream>

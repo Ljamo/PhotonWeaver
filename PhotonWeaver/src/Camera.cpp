@@ -8,7 +8,7 @@ Camera::Camera(int width, int height, glm::vec3 position)
     Position = position;
 }
 
-void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
+void Camera::updateMatrix(float verticalFOV, float nearClip, float farClip)
 {
     // Initializes matrices since otherwise they will be the null matrix
     glm::mat4 view = glm::mat4(1.0f);
@@ -17,7 +17,7 @@ void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
     // Makes camera look in the right direction from the right position
     view = glm::lookAt(Position, Position + Orientation, Up);
     // Adds perspective to the scene
-    projection = glm::perspective(glm::radians(FOVdeg), (float)width / height, nearPlane, farPlane);
+    projection = glm::perspective(glm::radians(verticalFOV), (float)width / height, nearClip, farClip);
 
     // Sets new camera matrix
     cameraMatrix = projection * view;
@@ -63,11 +63,11 @@ void Camera::Inputs(GLFWwindow* window, double deltaTime)
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
     {
-        Position -= adjustedSpeed * Up;
+        Position -= adjustedSpeed * -Up;
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
     {
-        Position -= adjustedSpeed * -Up;
+        Position -= adjustedSpeed * Up;
     }
 
     bool shiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
@@ -107,7 +107,7 @@ void Camera::Inputs(GLFWwindow* window, double deltaTime)
         deltaY *= sensitivity * scalingFactor * deltaTime;
 
         // Update camera orientation
-        float rotX = static_cast<float>(deltaY) / height;
+        float rotX = static_cast<float>(-deltaY) / height;
         float rotY = static_cast<float>(-deltaX) / width;
 
         // Update the camera orientation based on mouse movement
